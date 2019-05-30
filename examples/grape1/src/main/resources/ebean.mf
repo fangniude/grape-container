@@ -1,0 +1,3 @@
+entity-packages: grape1.domain
+transactional-packages: grape1.domain
+querybean-packages: grape1.domain

@@ -28,10 +28,11 @@
 
 - [x] 插件加载运行平台
 - [x] 支持葡萄生命周期管理
+- [x] 根据配置加载葡萄
 - [x] 多datasource管理
-- [ ] ebean启动时动态增强
-- [ ] 集成liquibase数据库迁移方案
-- [ ] 提供domain基类，定义常用的操作
+- [x] ebean启动时动态增强
+- [x] 启动时数据库自动迁移
+- [x] 提供domain基类，定义常用的操作
 - [x] 集成dubbo
 - [x] 集成swagger-ui
 - [x] 集成errorprone等质量工具

@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.typesafe.config.*;
 import io.ebean.EbeanServer;
 import io.ebean.EbeanServerFactory;
@@ -24,6 +25,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * application starter
@@ -41,15 +43,17 @@ public class GrapeApplication {
     private static final ImmutableMap<String, Grape> GRAPES = loadGrapes();
 
     private static final Map<String, String> DATASOURCE_REFERENCE_MAP = loadDataSourceReferences();
-    private static final ImmutableMap<String, EbeanServer> SERVER_MAP = loadDataSources();
+    private static final ImmutableMap<String, EbeanServer> SERVER_MAP;
+    private static final String DATASOURCE_DEFAULT = "default";
 
     private static ApplicationContext appContext;
 
     static {
-        // set ebean auto enhance
+        // Load the agent into the running JVM process
         if (!AgentLoader.loadAgentFromClasspath("ebean-agent", "debug=1")) {
             log.info("ebean-agent not found in classpath - not dynamically loaded");
         }
+        SERVER_MAP = loadDataSources();
     }
 
     public static void main(String[] args) {
@@ -58,18 +62,17 @@ public class GrapeApplication {
 
         // 1. db migration
         if (GRAPES.values().stream().anyMatch(Grape::hasEntity)) {
-//            flyway();
-//            dbMigration();
+            dbMigration();
             GRAPES.values().forEach(Grape::afterDataBaseMigration);
         }
 
         // 2. start spring boot
-        initSpring(args);
+        initSpring();
 
         // start success
-        log.info("\r\n*******************************************\r\n" //
+        log.info("\r\n*******************************************\r\n"
                 + "#######		STARTUP SUCCESS\r\n" //
-                + "#######		http://localhost:" + getConfig("server.port") + "\r\n"//
+                + "#######		http://localhost:" + getConfig("server.port") + "\r\n"
                 + "*******************************************\r\n");
 
 
@@ -86,7 +89,7 @@ public class GrapeApplication {
             MigrationConfig mc = new MigrationConfig();
             mc.setPlatformName(platformName);
             mc.setMetaTable(String.format("%s_db_migration", name));
-            mc.setMigrationPath(String.format("sql/%s/%s/", name, platformName));
+            mc.setMigrationPath(String.format("dbmigration/%s/%s/", name, platformName));
 
             MigrationRunner runner = new MigrationRunner(mc);
             runner.run(es.getDataSource());
@@ -98,7 +101,8 @@ public class GrapeApplication {
         Grape grape = GRAPES.get(name);
         if (grape != null) {
             if (grape.hasEntity()) {
-                return SERVER_MAP.getOrDefault(name, SERVER_MAP.get(DATASOURCE_REFERENCE_MAP.getOrDefault(name, "default")));
+                EbeanServer defaultServer = SERVER_MAP.getOrDefault("default", SERVER_MAP.get(DATASOURCE_REFERENCE_MAP.get("default")));
+                return SERVER_MAP.getOrDefault(name, defaultServer);
             } else {
                 throw new GrapeException(String.format("grape: %s not has entity, unsupported this method", name));
             }
@@ -109,12 +113,7 @@ public class GrapeApplication {
 
     private static EbeanServer ebeanServer(ServerConfig sc) {
         EbeanServer es = EbeanServerFactory.create(sc);
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                es.shutdown(true, true);
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> es.shutdown(true, true)));
         return es;
     }
 
@@ -122,7 +121,7 @@ public class GrapeApplication {
         ServerConfig sc = new ServerConfig();
         sc.setName(name);
 
-        if ("default".equalsIgnoreCase(name)) {
+        if (DATASOURCE_DEFAULT.equalsIgnoreCase(name)) {
             sc.setDefaultServer(true);
         }
 
@@ -130,20 +129,16 @@ public class GrapeApplication {
         sc.setRegister(true);
         sc.setLazyLoadBatchSize(100);
 
-        sc.addPackage(BaseGrapeModel.class.getPackage().getName());
+        sc.addPackage(BaseDomain.class.getPackage().getName());
         return sc;
     }
 
-    private static void initSpring(String[] args) {
+    private static void initSpring() {
         log.info("Init spring begin.");
-        ArrayList<Object> ss = Lists.newArrayList(GrapeApplication.class);
-        ss.addAll(GRAPES.keySet().stream().map(Package::getPackage).collect(Collectors.toList()));
-        // todo all packaged need add
-        SpringApplication app = new SpringApplication(GrapeApplication.class);
 
         // init spring
         log.info("Loading spring beans, this will take some time, please be patient.");
-        appContext = app.run(args);
+        appContext = new SpringApplication(GrapeApplication.class).run(GRAPES.keySet().toArray(new String[0]));
         log.info("Init spring end.\n");
     }
 
@@ -205,9 +200,37 @@ public class GrapeApplication {
             map.put(name, grape);
         }
 
-        log.info("Load grape plugin end.\n");
+        log.info("loaded all grapes: [{}]", String.join(", ", map.keySet()));
 
-        return ImmutableMap.copyOf(map);
+        String enableGrapes = getConfig("grapes.enable");
+
+        if (Strings.isNullOrEmpty(enableGrapes) || "all".equalsIgnoreCase(enableGrapes)) {
+            log.info("all grapes enabled.\n");
+
+            return ImmutableMap.copyOf(map);
+        } else {
+            HashSet<String> configSet = Sets.newHashSet(enableGrapes.split(","));
+
+            Sets.SetView<String> configGrapesNotFoundSet = Sets.difference(configSet, map.keySet());
+            if (!configGrapesNotFoundSet.isEmpty()) {
+                log.warn("config grapes: [{}] not found.", String.join(", ", configGrapesNotFoundSet));
+            }
+
+            Sets.SetView<String> ignoreGrapesSet = Sets.difference(map.keySet(), configSet);
+            if (!ignoreGrapesSet.isEmpty()) {
+                log.warn("ignore grapes: [{}].", String.join(", ", ignoreGrapesSet));
+            }
+
+            Sets.SetView<String> enableGrapesSet = Sets.intersection(configSet, map.keySet());
+            if (!enableGrapesSet.isEmpty()) {
+                log.info("enable grapes: [{}].", String.join(", ", enableGrapesSet));
+            } else {
+                log.warn("no grape enabled.");
+            }
+
+            Map<String, Grape> enableMap = map.entrySet().stream().filter(e -> enableGrapesSet.contains(e.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            return ImmutableMap.copyOf(enableMap);
+        }
     }
 
     private static ImmutableMap<String, EbeanServer> loadDataSources() {
@@ -246,7 +269,7 @@ public class GrapeApplication {
             }
         }
 
-        log.info("all datasources: {}", String.join(", ", serverMap.keySet()));
+        log.info("all datasources: [{}]", String.join(", ", serverMap.keySet()));
         return ImmutableMap.copyOf(serverMap);
     }
 

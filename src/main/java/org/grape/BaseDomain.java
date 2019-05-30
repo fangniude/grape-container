@@ -6,50 +6,56 @@ import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
-import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
-import javax.persistence.Version;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Optional;
 
 /**
  * @author lewis
  */
+@Slf4j
 @Getter
 @Setter
 @NoArgsConstructor
 @Cache(naturalKey = "primary_key")
 @MappedSuperclass
-public abstract class BaseGrapeModel extends Model {
+public abstract class BaseDomain extends Model {
+
+    /**
+     * 用逻辑ID，组合主键用id静态方法拼接
+     */
     @Id
     protected String id;
 
+    /**
+     * 通用名称
+     */
     protected String name;
 
+    /**
+     * 通用备注
+     */
     protected String remark;
 
-//    protected Boolean auth; todo may be used in data permission
-
-    @Version
-    protected Long version;
-
+    /**
+     * 插入时间
+     */
     @CreatedTimestamp
     protected LocalDateTime whenCreated;
 
+    /**
+     * 最后更新时间
+     */
     @UpdatedTimestamp
     protected LocalDateTime whenUpdated;
 
     public static String id(String... strings) {
         return String.join("__", strings);
     }
-
-    @NonNull
-    public abstract String id();
 
     @Override
     public void save() {
