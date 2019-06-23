@@ -1,7 +1,7 @@
 package org.grape;
 
 /**
- * Grape runtime exception
+ * Plugin runtime exception
  *
  * @author lewis
  */

@@ -38,3 +38,4 @@
 - [x] 集成errorprone等质量工具
 - [x] undertow替代tomcat
 - [ ] 提供pom-bom包
+- [ ] release到maven仓库

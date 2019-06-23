@@ -1,11 +1,10 @@
 package org.grape;
 
-import io.ebean.Model;
 import io.ebean.annotation.Cache;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,10 +19,10 @@ import java.util.Optional;
 @Slf4j
 @Getter
 @Setter
-@NoArgsConstructor
+@EqualsAndHashCode(of = "id", callSuper = false)
 @Cache(naturalKey = "primary_key")
 @MappedSuperclass
-public abstract class BaseDomain extends Model {
+public abstract class BaseDomain extends BaseModel {
 
     /**
      * 用逻辑ID，组合主键用id静态方法拼接
@@ -58,17 +57,23 @@ public abstract class BaseDomain extends Model {
     }
 
     @Override
-    public void save() {
+    protected String getDbName() {
+        String pluginName = getClass().getPackage().getName().split("\\.")[0];
+        return GrapeApplication.getPlugin(pluginName).getDbName();
+    }
+
+    @Override
+    protected void save() {
         super.save();
     }
 
     @Override
-    public void update() {
+    protected void update() {
         super.update();
     }
 
     @Override
-    public void insert() {
+    protected void insert() {
         super.insert();
     }
 

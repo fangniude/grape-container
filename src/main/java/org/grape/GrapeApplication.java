@@ -1,8 +1,8 @@
 package org.grape;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.typesafe.config.*;
@@ -23,9 +23,7 @@ import org.springframework.context.ApplicationContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * application starter
@@ -40,30 +38,28 @@ public class GrapeApplication {
     private static final Config CONFIG = ConfigFactory.load();
     private static final Properties PROPERTIES = loadProperties();
 
-    private static final ImmutableMap<String, Grape> GRAPES = loadGrapes();
+    private static final ImmutableMap<String, Plugin> PLUGINS = loadPlugins();
 
-    private static final Map<String, String> DATASOURCE_REFERENCE_MAP = loadDataSourceReferences();
-    private static final ImmutableMap<String, EbeanServer> SERVER_MAP;
-    private static final String DATASOURCE_DEFAULT = "default";
+    static final String DATA_SOURCE_DEFAULT = "default";
 
     private static ApplicationContext appContext;
 
     static {
         // Load the agent into the running JVM process
-        if (!AgentLoader.loadAgentFromClasspath("ebean-agent", "debug=1")) {
+        if (!AgentLoader.loadAgentByMainClass("io.ebean.enhance.Transformer", "debug=1")) {
             log.info("ebean-agent not found in classpath - not dynamically loaded");
         }
-        SERVER_MAP = loadDataSources();
+        loadDataSources();
     }
 
     public static void main(String[] args) {
         // 0. in the beginning
-        GRAPES.values().forEach(Grape::inTheBeginning);
+        PLUGINS.values().forEach(Plugin::inTheBeginning);
 
         // 1. db migration
-        if (GRAPES.values().stream().anyMatch(Grape::hasEntity)) {
+        if (PLUGINS.values().stream().anyMatch(Plugin::hasEntity)) {
             dbMigration();
-            GRAPES.values().forEach(Grape::afterDataBaseMigration);
+            PLUGINS.values().forEach(Plugin::afterDataBaseMigration);
         }
 
         // 2. start spring boot
@@ -77,12 +73,12 @@ public class GrapeApplication {
 
 
         // 3. after started
-        GRAPES.values().forEach(plg -> plg.afterStarted(appContext));
+        PLUGINS.values().forEach(plg -> plg.afterStarted(appContext));
     }
 
     private static void dbMigration() {
-        GRAPES.values().stream().filter(Grape::hasEntity).map(Grape::name).forEach(name -> {
-            DefaultServer es = (DefaultServer) grapeEbeanServer(name);
+        PLUGINS.values().stream().filter(Plugin::hasEntity).map(Plugin::name).forEach(name -> {
+            DefaultServer es = (DefaultServer) getPlugin(name).ebeanServer();
 
             String platformName = es.getDatabasePlatform().getName();
 
@@ -96,49 +92,12 @@ public class GrapeApplication {
         });
     }
 
-    @NonNull
-    private static EbeanServer grapeEbeanServer(String name) {
-        Grape grape = GRAPES.get(name);
-        if (grape != null) {
-            if (grape.hasEntity()) {
-                EbeanServer defaultServer = SERVER_MAP.getOrDefault("default", SERVER_MAP.get(DATASOURCE_REFERENCE_MAP.get("default")));
-                return SERVER_MAP.getOrDefault(name, defaultServer);
-            } else {
-                throw new GrapeException(String.format("grape: %s not has entity, unsupported this method", name));
-            }
-        } else {
-            throw new GrapeException(String.format("grape: %s not exist", name));
-        }
-    }
-
-    private static EbeanServer ebeanServer(ServerConfig sc) {
-        EbeanServer es = EbeanServerFactory.create(sc);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> es.shutdown(true, true)));
-        return es;
-    }
-
-    private static ServerConfig serverConfig(String name) {
-        ServerConfig sc = new ServerConfig();
-        sc.setName(name);
-
-        if (DATASOURCE_DEFAULT.equalsIgnoreCase(name)) {
-            sc.setDefaultServer(true);
-        }
-
-        sc.loadFromProperties(GrapeApplication.PROPERTIES);
-        sc.setRegister(true);
-        sc.setLazyLoadBatchSize(100);
-
-        sc.addPackage(BaseDomain.class.getPackage().getName());
-        return sc;
-    }
-
     private static void initSpring() {
         log.info("Init spring begin.");
 
         // init spring
         log.info("Loading spring beans, this will take some time, please be patient.");
-        appContext = new SpringApplication(GrapeApplication.class).run(GRAPES.keySet().toArray(new String[0]));
+        appContext = new SpringApplication(GrapeApplication.class).run(PLUGINS.keySet().toArray(new String[0]));
         log.info("Init spring end.\n");
     }
 
@@ -150,25 +109,17 @@ public class GrapeApplication {
      * @return the property value
      */
     @NonNull
-    public static String getConfig(String name) {
+    private static String getConfig(@NonNull String name) {
         String value = PROPERTIES.getProperty(name);
         if (Strings.isNullOrEmpty(value)) {
             String msg = String.format("%s must config in application.properties.", name);
-            log.error("\r\n********************************************************************\r\n" //
-                    + "#######		Missing Config  \r\n" //
-                    + "#######		" + msg + "\r\n"//
+            log.error("\r\n********************************************************************\r\n"
+                    + "#######		Missing Config  \r\n"
+                    + "#######		" + msg + "\r\n"
                     + "********************************************************************\r\n");
             throw new GrapeException(msg);
         }
         return value;
-    }
-
-    public static String getProperty(String name, String defaultValue) {
-        return PROPERTIES.getProperty(name, defaultValue);
-    }
-
-    public static Properties getProperties() {
-        return PROPERTIES;
     }
 
     private static Properties loadProperties() {
@@ -182,30 +133,39 @@ public class GrapeApplication {
     }
 
     @NonNull
-    private static ImmutableMap<String, Grape> loadGrapes() {
+    private static ImmutableMap<String, Plugin> loadPlugins() {
         log.info("Load grape plugin begin.");
-        Map<String, Grape> map = Maps.newHashMap();
+        Map<String, Plugin> map = Maps.newHashMap();
 
-        ServiceLoader<Grape> grapes = ServiceLoader.load(Grape.class);
-        for (Grape grape : grapes) {
+        ServiceLoader<Plugin> grapes = ServiceLoader.load(Plugin.class);
+
+        ConfigObject dsMap = CONFIG.getConfig("datasource").root();
+
+        for (Plugin grape : grapes) {
             String name = grape.name();
             log.info("find grape plugin: " + name);
 
             if (map.containsKey(name)) {
-                String msg = String.format("Duplicate grapes: %s, grape name must be unique.", name);
+                String msg = String.format("Duplicate plugins: %s, plugin name must be unique.", name);
                 log.error(msg);
                 throw new GrapeException(msg);
+            }
+
+            ConfigValue cv = dsMap.get(name);
+            if (cv != null && ConfigValueType.STRING.equals(cv.valueType())) {
+                grape.setDbName(String.valueOf(cv.unwrapped()));
+                log.info("set the data source of plugin [{}] to [{}].", name, cv.unwrapped());
             }
 
             map.put(name, grape);
         }
 
-        log.info("loaded all grapes: [{}]", String.join(", ", map.keySet()));
+        log.info("loaded all plugins: [{}]", String.join(", ", map.keySet()));
 
-        String enableGrapes = getConfig("grapes.enable");
+        String enableGrapes = getConfig("plugins.enable");
 
         if (Strings.isNullOrEmpty(enableGrapes) || "all".equalsIgnoreCase(enableGrapes)) {
-            log.info("all grapes enabled.\n");
+            log.info("all plugins enabled.\n");
 
             return ImmutableMap.copyOf(map);
         } else {
@@ -213,49 +173,52 @@ public class GrapeApplication {
 
             Sets.SetView<String> configGrapesNotFoundSet = Sets.difference(configSet, map.keySet());
             if (!configGrapesNotFoundSet.isEmpty()) {
-                log.warn("config grapes: [{}] not found.", String.join(", ", configGrapesNotFoundSet));
+                log.warn("config plugins: [{}] not found.", String.join(", ", configGrapesNotFoundSet));
             }
 
             Sets.SetView<String> ignoreGrapesSet = Sets.difference(map.keySet(), configSet);
             if (!ignoreGrapesSet.isEmpty()) {
-                log.warn("ignore grapes: [{}].", String.join(", ", ignoreGrapesSet));
+                log.warn("ignore plugins: [{}].", String.join(", ", ignoreGrapesSet));
             }
 
             Sets.SetView<String> enableGrapesSet = Sets.intersection(configSet, map.keySet());
             if (!enableGrapesSet.isEmpty()) {
-                log.info("enable grapes: [{}].", String.join(", ", enableGrapesSet));
+                log.info("enable plugins: [{}].", String.join(", ", enableGrapesSet));
             } else {
-                log.warn("no grape enabled.");
+                log.warn("no plugin enabled.");
             }
 
-            Map<String, Grape> enableMap = map.entrySet().stream().filter(e -> enableGrapesSet.contains(e.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            Map<String, Plugin> enableMap = map.entrySet().stream().filter(e -> enableGrapesSet.contains(e.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             return ImmutableMap.copyOf(enableMap);
         }
     }
 
-    private static ImmutableMap<String, EbeanServer> loadDataSources() {
+    private static void loadDataSources() {
         Map<String, ServerConfig> serverMap = loadDataSourcesConfig();
 
-        Set<String> hasEntityGrapes = GRAPES.values().stream().filter(Grape::hasEntity).map(Grape::name).collect(Collectors.toSet());
+        Set<String> hasEntityGrapes = PLUGINS.values().stream().filter(Plugin::hasEntity).map(Plugin::name).collect(Collectors.toSet());
+        log.info("has entity plugins: [{}]", String.join(", ", hasEntityGrapes));
 
-        Map<String, EbeanServer> map = hasEntityGrapes.stream()
+        hasEntityGrapes.stream()
                 .map(name -> {
-                    ServerConfig defaultConfig = serverMap.getOrDefault("default", serverMap.get(DATASOURCE_REFERENCE_MAP.get("default")));
-                    ServerConfig sc = serverMap.getOrDefault(name, defaultConfig);
+                    ServerConfig sc = serverMap.get(getPlugin(name).getDbName());
 
                     if (sc != null) {
-                        sc.addPackage(name);
+                        sc.addPackage(String.format("%s.domain", name));
                     } else {
                         throw new GrapeException(String.format("datasource for grape %s not config and the default datasource not exist.", name));
                     }
                     return sc;
                 }).distinct()
-                .map(GrapeApplication::ebeanServer)
-                .collect(Collectors.toMap(EbeanServer::getName, Function.identity()));
+                .forEach(sc -> {
+                    log.info("data source [{}] support packages list: [{}].", sc.getName(), String.join(", ", sc.getPackages()));
 
-        return ImmutableMap.copyOf(map);
+                    EbeanServer es = EbeanServerFactory.create(sc);
+                    Runtime.getRuntime().addShutdownHook(new Thread(() -> es.shutdown(true, true)));
+                });
     }
 
+    @NonNull
     private static Map<String, ServerConfig> loadDataSourcesConfig() {
         ConfigObject dsMap = CONFIG.getConfig("datasource").root();
 
@@ -273,23 +236,25 @@ public class GrapeApplication {
         return ImmutableMap.copyOf(serverMap);
     }
 
-    private static Map<String, String> loadDataSourceReferences() {
-        ConfigObject dsMap = CONFIG.getConfig("datasource").root();
+    private static ServerConfig serverConfig(String name) {
+        ServerConfig sc = new ServerConfig();
+        sc.setName(name);
 
-        Map<String, String> datasourceReferenceMap = Maps.newHashMap();
-        for (Map.Entry<String, ConfigValue> entry : dsMap.entrySet()) {
-            String k = entry.getKey();
-            ConfigValue v = entry.getValue();
-
-            if (ConfigValueType.STRING.equals(v.valueType())) {
-                datasourceReferenceMap.put(k, String.valueOf(v.unwrapped()));
-            }
+        if (DATA_SOURCE_DEFAULT.equalsIgnoreCase(name)) {
+            sc.setDefaultServer(true);
         }
 
-        datasourceReferenceMap.forEach((k, v) -> {
-            log.info("datasource reference map: {} -> {}", k, v);
-        });
+        sc.loadFromProperties(GrapeApplication.PROPERTIES);
+        sc.setRegister(true);
+        sc.setLazyLoadBatchSize(100);
 
-        return ImmutableMap.copyOf(datasourceReferenceMap);
+        sc.addPackage(BaseDomain.class.getPackage().getName());
+        return sc;
+    }
+
+    @NonNull
+    public static Plugin getPlugin(@NonNull String pluginName) {
+        Preconditions.checkArgument(PLUGINS.containsKey(pluginName), String.format("plugin [%s] not exist.", pluginName));
+        return PLUGINS.get(pluginName);
     }
 }

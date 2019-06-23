@@ -2,8 +2,8 @@ package grape2;
 
 
 import com.google.auto.service.AutoService;
-import org.grape.Grape;
+import org.grape.Plugin;
 
-@AutoService(Grape.class)
-public class Grape2 implements Grape {
+@AutoService(Plugin.class)
+public class Grape2 extends Plugin {
 }

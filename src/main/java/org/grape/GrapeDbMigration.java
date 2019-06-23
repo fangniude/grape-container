@@ -17,17 +17,11 @@ import java.util.Properties;
 public final class GrapeDbMigration extends DefaultDbMigration {
     public GrapeDbMigration() {
         // set ebean auto enhance
-        if (!AgentLoader.loadAgentFromClasspath("ebean-agent", "debug=1")) {
+        if (!AgentLoader.loadAgentByMainClass("io.ebean.enhance.Transformer", "debug=1")) {
             logger.info("ebean-agent not found in classpath - not dynamically loaded");
         }
 
-//        super.addPlatform(Platform.H2, Platform.H2.name().toLowerCase());
         super.addPlatform(Platform.MYSQL, Platform.MYSQL.name().toLowerCase());
-//        super.addPlatform(Platform.ORACLE, Platform.ORACLE.name().toLowerCase());
-//        super.addPlatform(Platform.POSTGRES, Platform.POSTGRES.name().toLowerCase());
-//        super.addPlatform(Platform.SQLSERVER, Platform.SQLSERVER.name().toLowerCase());
-//        super.addPlatform(Platform.SQLITE, Platform.SQLITE.name().toLowerCase());
-//        super.addPlatform(Platform.DB2, Platform.DB2.name().toLowerCase());
     }
 
 
@@ -41,8 +35,6 @@ public final class GrapeDbMigration extends DefaultDbMigration {
         this.serverConfig = new ServerConfig();
         this.serverConfig.addPackage(String.format("%s.domain", plgName));
         this.constraintNaming = serverConfig.getConstraintNaming();
-
-//        this.server = (SpiEbeanServer) EbeanServerFactory.create(serverConfig);
 
         migrationConfig = new DbMigrationConfig();
         Properties properties = new Properties();
