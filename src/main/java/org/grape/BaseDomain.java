@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 /**
  * @author lewis
@@ -20,7 +19,7 @@ import java.util.Optional;
 @Getter
 @Setter
 @EqualsAndHashCode(of = "id", callSuper = false)
-@Cache(naturalKey = "primary_key")
+@Cache(naturalKey = "id")
 @MappedSuperclass
 public abstract class BaseDomain extends BaseModel {
 
@@ -58,7 +57,12 @@ public abstract class BaseDomain extends BaseModel {
 
     @Override
     protected String getDbName() {
-        String pluginName = getClass().getPackage().getName().split("\\.")[0];
+        Class<? extends BaseDomain> domainClass = getClass();
+        return getDbNameByDomain(domainClass);
+    }
+
+    private static String getDbNameByDomain(Class<? extends BaseDomain> domainClass) {
+        String pluginName = domainClass.getPackage().getName().split("\\.")[0];
         return GrapeApplication.getPlugin(pluginName).getDbName();
     }
 
@@ -77,20 +81,12 @@ public abstract class BaseDomain extends BaseModel {
         super.insert();
     }
 
-    public static class Finder<T> extends io.ebean.Finder<Long, T> {
+    public static class Finder<T extends BaseDomain> extends io.ebean.Finder<String, T> {
         protected final Class<T> type;
 
         public Finder(Class<T> type) {
-            super(type);
+            super(type, getDbNameByDomain(type));
             this.type = type;
-        }
-
-        public Optional<T> byIdo(Long id) {
-            return Optional.ofNullable(byId(id));
-        }
-
-        public Optional<T> byKey(String key) {
-            return db().find(type).where().eq("primary_key", key).findOneOrEmpty();
         }
     }
 }
