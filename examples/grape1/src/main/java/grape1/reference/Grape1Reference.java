@@ -2,7 +2,7 @@ package grape1.reference;
 
 import grape1.service.StudentService;
 import lombok.Getter;
-import org.apache.dubbo.config.spring.beans.factory.annotation.ReferenceHelper;
+import org.grape.ReferenceHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

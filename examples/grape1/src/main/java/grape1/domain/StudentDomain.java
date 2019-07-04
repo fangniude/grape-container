@@ -3,7 +3,7 @@ package grape1.domain;
 import grape1.service.StudentService;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.dubbo.config.spring.beans.factory.annotation.ReferenceHelper;
+import org.grape.ReferenceHelper;
 import org.grape.BaseDomain;
 import org.grape.GrapeApplication;
 

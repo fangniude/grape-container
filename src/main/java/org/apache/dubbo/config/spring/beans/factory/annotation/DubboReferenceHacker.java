@@ -1,32 +1,33 @@
 package org.apache.dubbo.config.spring.beans.factory.annotation;
 
+import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.Method;
 import org.apache.dubbo.config.annotation.Reference;
 import org.grape.GrapeException;
 import org.springframework.beans.PropertyValues;
 import org.springframework.beans.factory.annotation.InjectionMetadata;
+import sun.reflect.annotation.AnnotationParser;
 
 import java.lang.annotation.Annotation;
 
 @Slf4j
-public class ReferenceHelper {
-    private ReferenceAnnotationBeanPostProcessor referenceProcessor;
+public class DubboReferenceHacker {
+    private static ClassReference reference = new ClassReference();
+    private static Object bean = new Object();
 
-    public ReferenceHelper(ReferenceAnnotationBeanPostProcessor referenceProcessor) {
-        this.referenceProcessor = referenceProcessor;
-    }
+    @SuppressWarnings("ConstantConditions")
+    private static InjectionMetadata.InjectedElement injectedElement = new InjectionMetadata.InjectedElement(null, null) {
+        @SuppressWarnings("NullableProblems")
+        @Override
+        protected void inject(Object target, String requestingBeanName, PropertyValues pvs) throws Throwable {
+            super.inject(target, requestingBeanName, pvs);
+        }
+    };
 
-    public <T> T getReference(Class<T> tClass) {
+    public static <T> T getReferenceByClass(ReferenceAnnotationBeanPostProcessor referenceProcessor, Class<T> tClass) {
         try {
-            @SuppressWarnings({"unchecked", "ConstantConditions"})
-            Object object = referenceProcessor.getInjectedObject(new ClassReference(tClass), this, tClass.getName(), tClass, new InjectionMetadata.InjectedElement(null, null) {
-                @SuppressWarnings("NullableProblems")
-                @Override
-                protected void inject(Object target, String requestingBeanName, PropertyValues pvs) throws Throwable {
-                    super.inject(target, requestingBeanName, pvs);
-                }
-            });
+            Object object = referenceProcessor.getInjectedObject(reference, bean, tClass.getName(), tClass, injectedElement);
 
             return tClass.cast(object);
         } catch (Exception e) {
@@ -36,16 +37,11 @@ public class ReferenceHelper {
     }
 
     @SuppressWarnings("ClassExplicitlyAnnotation")
-    private static class ClassReference<T> implements Reference {
-        private Class<T> tClass;
-
-        ClassReference(Class<T> tClass) {
-            this.tClass = tClass;
-        }
+    private static class ClassReference implements Reference {
 
         @Override
         public Class<?> interfaceClass() {
-            return tClass;
+            return void.class;
         }
 
         @Override
