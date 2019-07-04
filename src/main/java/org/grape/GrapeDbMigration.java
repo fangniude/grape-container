@@ -33,6 +33,9 @@ public final class GrapeDbMigration extends DefaultDbMigration {
         this.constraintNaming = serverConfig.getConstraintNaming();
 
         migrationConfig = new DbMigrationConfig();
+
+        System.setProperty("ddl.migration.name", plgName);
+        System.setProperty("ddl.migration.version", version);
         Properties properties = new Properties();
         properties.setProperty("migration.name", plgName);
         properties.setProperty("migration.version", version);

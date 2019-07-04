@@ -10,6 +10,6 @@ public class DbMigrationTest {
     @Test
     public void test() throws IOException {
         GrapeDbMigration dbm = new GrapeDbMigration();
-        dbm.generate("grape1", "1.0.1");
+        dbm.generate("grape1", "1.0.0");
     }
 }

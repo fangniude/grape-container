@@ -13,6 +13,7 @@ create table student_domain (
   name                          varchar(255),
   remark                        varchar(255),
   age                           integer not null,
+  friend                        varchar(255),
   class_id_id                   varchar(255),
   when_created                  datetime(6) not null,
   when_updated                  datetime(6) not null,

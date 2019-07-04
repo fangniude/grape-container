@@ -13,8 +13,8 @@
             <column name="name" type="varchar"/>
             <column name="remark" type="varchar"/>
             <column name="age" type="integer" notnull="true"/>
-            <column name="class_id_id" type="varchar" references="clazz_domain.id"
-                    foreignKeyName="fk_student_domain_class_id_id" foreignKeyIndex="ix_student_domain_class_id_id"/>
+            <column name="friend" type="varchar"/>
+            <column name="class_id_id" type="varchar" references="clazz_domain.id" foreignKeyName="fk_student_domain_class_id_id" foreignKeyIndex="ix_student_domain_class_id_id"/>
             <column name="when_created" type="timestamp" notnull="true"/>
             <column name="when_updated" type="timestamp" notnull="true"/>
         </createTable>
