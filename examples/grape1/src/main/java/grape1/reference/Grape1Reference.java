@@ -25,11 +25,12 @@ public class Grape1Reference {
         CompletableFuture.runAsync(() -> {
             while (true) {
                 try {
-                    TimeUnit.SECONDS.sleep(5);
+                    TimeUnit.SECONDS.sleep(10);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 StudentService reference = helper.getReference(StudentService.class);
+                System.out.println(reference);
                 assert reference != null;
             }
         });
