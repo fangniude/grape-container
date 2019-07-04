@@ -29,7 +29,7 @@ public class Grape1Reference {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                StudentService reference = helper.getReference(StudentService.class);
+                StudentService reference = ReferenceHelper.reference(StudentService.class);
                 System.out.println(reference);
                 assert reference != null;
             }
