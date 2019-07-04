@@ -39,15 +39,12 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.influxdb/influxdb-java -->
-        <dependency>
-            <groupId>org.influxdb</groupId>
-            <artifactId>influxdb-java</artifactId>
-            <version>2.15</version>
         </dependency>
         <!-- tools -->
         <dependency>
@@ -93,6 +90,30 @@
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo</artifactId>
             <version>2.7.1</version>
+        </dependency>
+
+        <!-- Dubbo Nacos registry dependency -->
+        <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo-registry-nacos</artifactId>
+            <version>2.7.1</version>
+        </dependency>
+
+        <!-- Keep latest Nacos client version -->
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-client</artifactId>
+            <version>1.0.0-RC3</version>
+            <exclusions>
+<!--                <exclusion>-->
+<!--                    <artifactId>fastjson</artifactId>-->
+<!--                    <groupId>com.alibaba</groupId>-->
+<!--                </exclusion>-->
+                <exclusion>
+                    <artifactId>guava</artifactId>
+                    <groupId>com.google.guava</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- config -->

@@ -8,7 +8,6 @@ import io.ebean.config.PropertiesWrapper;
 import io.ebean.config.ServerConfig;
 import io.ebeaninternal.dbmigration.DbOffline;
 import io.ebeaninternal.dbmigration.DefaultDbMigration;
-import org.avaje.agentloader.AgentLoader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,10 +15,7 @@ import java.util.Properties;
 
 public final class GrapeDbMigration extends DefaultDbMigration {
     public GrapeDbMigration() {
-        // set ebean auto enhance
-        if (!AgentLoader.loadAgentByMainClass("io.ebean.enhance.Transformer", "debug=1")) {
-            logger.info("ebean-agent not found in classpath - not dynamically loaded");
-        }
+        BaseModel.enableEnhance();
 
         super.addPlatform(Platform.MYSQL, Platform.MYSQL.name().toLowerCase());
     }

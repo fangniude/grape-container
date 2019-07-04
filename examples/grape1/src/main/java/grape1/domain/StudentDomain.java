@@ -1,8 +1,11 @@
 package grape1.domain;
 
+import grape1.service.StudentService;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.dubbo.config.spring.beans.factory.annotation.ReferenceHelper;
 import org.grape.BaseDomain;
+import org.grape.GrapeApplication;
 
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
@@ -16,4 +19,9 @@ public class StudentDomain extends BaseDomain {
 
     @ManyToOne
     private ClazzDomain classId;
+
+    public void hello() {
+        String name = GrapeApplication.getSpringBean(ReferenceHelper.class).getReference(StudentService.class).getName();
+        System.out.println(name);
+    }
 }

@@ -5,11 +5,22 @@ import io.ebean.Database;
 import io.ebean.Ebean;
 import io.ebean.EbeanServer;
 import io.ebean.bean.EntityBean;
+import lombok.extern.slf4j.Slf4j;
+import org.avaje.agentloader.AgentLoader;
 
 import javax.persistence.MappedSuperclass;
 
+@Slf4j
 @MappedSuperclass
 public abstract class BaseModel {
+    private static final String EBEAN_ENHANCE_DEBUG = "debug=1";
+
+    static void enableEnhance() {
+        // set ebean auto enhance
+        if (!AgentLoader.loadAgentByMainClass("io.ebean.enhance.Transformer", EBEAN_ENHANCE_DEBUG)) {
+            log.info("ebean-agent not found in classpath - not dynamically loaded");
+        }
+    }
 
     /**
      * db name

@@ -85,14 +85,13 @@ public interface WhereCondition extends Serializable {
         }
     }
 
-    @Getter
     @NoArgsConstructor
     class BaseBoolCondition implements WhereCondition, Serializable {
         private BoolOperator operator;
 
         private List<WhereCondition> conditions;
 
-        public BaseBoolCondition(@NonNull BoolOperator operator, @NonNull List<WhereCondition> conditions) {
+        public BaseBoolCondition(BoolOperator operator, @NonNull List<WhereCondition> conditions) {
             this.operator = operator;
             this.conditions = conditions;
             if (conditions.size() <= 1) {
@@ -113,19 +112,18 @@ public interface WhereCondition extends Serializable {
 
     @NoArgsConstructor
     class AndCondition extends BaseBoolCondition implements Serializable {
-        public AndCondition(@NonNull List<WhereCondition> conditions) {
+        public AndCondition(List<WhereCondition> conditions) {
             super(BoolOperator.AND, conditions);
         }
     }
 
     @NoArgsConstructor
     class OrCondition extends BaseBoolCondition implements Serializable {
-        public OrCondition(@NonNull List<WhereCondition> conditions) {
+        public OrCondition(List<WhereCondition> conditions) {
             super(BoolOperator.OR, conditions);
         }
     }
 
-    @Getter
     @NoArgsConstructor
     class ExpressCondition implements WhereCondition, Serializable {
         private String column;

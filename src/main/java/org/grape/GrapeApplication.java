@@ -15,8 +15,8 @@ import io.ebeaninternal.server.core.DefaultServer;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.avaje.agentloader.AgentLoader;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 
@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @NoArgsConstructor
+@EnableAutoConfiguration
 @SpringBootApplication
 public class GrapeApplication {
 
@@ -41,14 +42,12 @@ public class GrapeApplication {
     private static final ImmutableMap<String, Plugin> PLUGINS = loadPlugins();
 
     static final String DATA_SOURCE_DEFAULT = "default";
+    private static final String ENABLE_PLUGIN_ALL = "all";
 
     private static ApplicationContext appContext;
 
     static {
-        // Load the agent into the running JVM process
-        if (!AgentLoader.loadAgentByMainClass("io.ebean.enhance.Transformer", "debug=1")) {
-            log.info("ebean-agent not found in classpath - not dynamically loaded");
-        }
+        BaseModel.enableEnhance();
         loadDataSources();
     }
 
@@ -95,9 +94,18 @@ public class GrapeApplication {
     private static void initSpring() {
         log.info("Init spring begin.");
 
+        SpringApplication app = new SpringApplication(GrapeApplication.class);
+
+        // set spring scan packages
+        app.setSources(PLUGINS.keySet());
+
+        // set dubbo scan packages
+        PROPERTIES.setProperty("dubbo.scan.base-packages", String.join(",", PLUGINS.keySet()));
+        app.setDefaultProperties(PROPERTIES);
+
         // init spring
         log.info("Loading spring beans, this will take some time, please be patient.");
-        appContext = new SpringApplication(GrapeApplication.class).run(PLUGINS.keySet().toArray(new String[0]));
+        appContext = app.run();
         log.info("Init spring end.\n");
     }
 
@@ -164,7 +172,7 @@ public class GrapeApplication {
 
         String enableGrapes = getConfig("plugins.enable");
 
-        if (Strings.isNullOrEmpty(enableGrapes) || "all".equalsIgnoreCase(enableGrapes)) {
+        if (Strings.isNullOrEmpty(enableGrapes) || ENABLE_PLUGIN_ALL.equalsIgnoreCase(enableGrapes)) {
             log.info("all plugins enabled.\n");
 
             return ImmutableMap.copyOf(map);
@@ -252,9 +260,15 @@ public class GrapeApplication {
         return sc;
     }
 
+    @SuppressWarnings("WeakerAccess")
     @NonNull
     public static Plugin getPlugin(@NonNull String pluginName) {
         Preconditions.checkArgument(PLUGINS.containsKey(pluginName), String.format("plugin [%s] not exist.", pluginName));
         return PLUGINS.get(pluginName);
+    }
+
+    @NonNull
+    public static <T> T getSpringBean(Class<T> tClass) {
+        return appContext.getBean(tClass);
     }
 }
