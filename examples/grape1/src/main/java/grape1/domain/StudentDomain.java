@@ -3,9 +3,9 @@ package grape1.domain;
 import grape1.service.StudentService;
 import lombok.Getter;
 import lombok.Setter;
-import org.grape.ReferenceHelper;
 import org.grape.BaseDomain;
 import org.grape.GrapeApplication;
+import org.grape.ReferenceHelper;
 
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
