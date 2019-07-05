@@ -12,7 +12,7 @@ import javax.persistence.ManyToOne;
 
 @Getter
 @Setter
-@Entity(name = "STU")
+@Entity(name = "GRAPE1_STUDENT")
 public class StudentDomain extends BaseDomain {
     private int age;
     private String friend;

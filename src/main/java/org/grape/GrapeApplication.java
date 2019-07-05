@@ -149,6 +149,7 @@ public class GrapeApplication {
 
         ConfigObject dsMap = CONFIG.getConfig("datasource").root();
 
+
         for (Plugin grape : grapes) {
             String name = grape.name();
             log.info("find grape plugin: " + name);
