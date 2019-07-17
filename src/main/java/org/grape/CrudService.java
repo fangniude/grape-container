@@ -27,5 +27,8 @@ public interface CrudService<T extends BaseDomain> {
     @Nullable
     T findByIdNullable(String id);
 
+    @NonNull
+    T findByIdNonNull(String id);
+
     PagedResultList<T> find(SimpleQuery cond);
 }

@@ -2,6 +2,7 @@ package org.grape;
 
 import io.ebean.PagedList;
 import io.ebean.Query;
+import lombok.NonNull;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -60,6 +61,17 @@ public abstract class BaseCrudService<T extends BaseDomain> implements CrudServi
     @Override
     public T findByIdNullable(String id) {
         return finder.byId(id);
+    }
+
+    @NonNull
+    @Override
+    public T findByIdNonNull(String id) {
+        T t = finder.byId(id);
+        if (t == null) {
+            throw new GrapeException(String.format("can not found %s by id %s", domainClass.getName(), id));
+        } else {
+            return t;
+        }
     }
 
     @Override

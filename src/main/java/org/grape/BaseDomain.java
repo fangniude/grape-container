@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import java.time.LocalDateTime;
@@ -32,6 +33,7 @@ public abstract class BaseDomain extends BaseModel {
     /**
      * 通用名称
      */
+    @Column(nullable = false)
     protected String name;
 
     /**
