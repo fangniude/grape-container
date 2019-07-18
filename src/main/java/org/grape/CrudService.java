@@ -30,5 +30,5 @@ public interface CrudService<T extends BaseDomain> {
     @NonNull
     T findByIdNonNull(String id);
 
-    PagedResultList<T> find(SimpleQuery cond);
+    PagedResultList<T> find(SimpleQuery query);
 }

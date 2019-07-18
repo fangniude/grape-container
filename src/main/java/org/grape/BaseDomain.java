@@ -3,6 +3,8 @@ package org.grape;
 import io.ebean.annotation.Cache;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 /**
  * @author lewis
  */
+@ApiModel("BaseDomain")
 @Slf4j
 @Getter
 @Setter
@@ -28,29 +31,34 @@ public abstract class BaseDomain extends BaseModel {
      * 用逻辑ID，组合主键用id静态方法拼接
      */
     @Id
+    @ApiModelProperty("逻辑ID")
     protected String id;
 
     /**
      * 通用名称
      */
     @Column(nullable = false)
+    @ApiModelProperty("通用名称")
     protected String name;
 
     /**
      * 通用备注
      */
+    @ApiModelProperty("通用备注")
     protected String remark;
 
     /**
      * 插入时间
      */
     @CreatedTimestamp
+    @ApiModelProperty("插入时间")
     protected LocalDateTime whenCreated;
 
     /**
      * 最后更新时间
      */
     @UpdatedTimestamp
+    @ApiModelProperty("最后更新时间")
     protected LocalDateTime whenUpdated;
 
     public static String id(String... strings) {

@@ -5,6 +5,8 @@ import io.ebean.Expression;
 import io.ebean.ExpressionFactory;
 import io.ebean.Junction;
 import io.ebean.Query;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,21 +15,29 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.util.List;
 
+@ApiModel("表格查询条件")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class SimpleQuery implements Serializable {
+    @ApiModelProperty("显示的列")
     private List<String> columns;
+    @ApiModelProperty("全文搜索的列")
     private List<String> searchColumns;
+    @ApiModelProperty("搜索文本")
     private String searchText;
+    @ApiModelProperty("过滤条件")
     private WhereCondition whereCondition;
+    @ApiModelProperty("排序字段")
     private List<OrderBy> orderByList;
+    @ApiModelProperty("页面大小")
     private int pageSize = Integer.MAX_VALUE;
 
     /**
      * start with 1
      */
+    @ApiModelProperty("当前页码，从1开始，默认1")
     private int pageIndex = 1;
 
     public int offSet() {
