@@ -4,9 +4,12 @@ import io.ebean.Expression;
 import io.ebean.ExpressionFactory;
 import io.ebean.Junction;
 import io.ebean.Query;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.List;
@@ -89,9 +92,9 @@ public interface WhereCondition extends Serializable {
     class BaseBoolCondition implements WhereCondition, Serializable {
         private BoolOperator operator;
 
-        private List<WhereCondition> conditions;
+        private List<? extends WhereCondition> conditions;
 
-        public BaseBoolCondition(BoolOperator operator, @NonNull List<WhereCondition> conditions) {
+        public BaseBoolCondition(BoolOperator operator, @NonNull List<? extends WhereCondition> conditions) {
             this.operator = operator;
             this.conditions = conditions;
             if (conditions.size() <= 1) {
@@ -112,22 +115,28 @@ public interface WhereCondition extends Serializable {
 
     @NoArgsConstructor
     class AndCondition extends BaseBoolCondition implements Serializable {
-        public AndCondition(List<WhereCondition> conditions) {
+        public AndCondition(List<? extends WhereCondition> conditions) {
             super(BoolOperator.AND, conditions);
         }
     }
 
     @NoArgsConstructor
     class OrCondition extends BaseBoolCondition implements Serializable {
-        public OrCondition(List<WhereCondition> conditions) {
+        public OrCondition(List<? extends WhereCondition> conditions) {
             super(BoolOperator.OR, conditions);
         }
     }
 
+    @ApiModel("【通用】过滤条件")
+    @Getter
+    @Setter
     @NoArgsConstructor
     class ExpressCondition implements WhereCondition, Serializable {
+        @ApiModelProperty(value = "列名", required = true)
         private String column;
+        @ApiModelProperty(value = "操作: EQ(=), UEQ(!=), GT(>), LT(<), GET(>=), LET(<=), LIKE(%text%), LLIKE(text%), RLIKE(%text), BETWEEN(between x and y), IN([1,2,3]), NOTIN([1,2,3])", required = true)
         private ExpressOperator operator;
+        @ApiModelProperty(value = "值列表，一般为一个，between为2个，in可以为多个", required = true)
         private String[] values;
 
         public ExpressCondition(@NonNull String column, @NonNull ExpressOperator operator, @NonNull String... values) {

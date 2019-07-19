@@ -1,5 +1,6 @@
 package org.grape;
 
+import com.google.common.base.Strings;
 import io.ebean.PagedList;
 import io.ebean.Query;
 import lombok.NonNull;
@@ -30,6 +31,20 @@ public abstract class BaseCrudService<T extends BaseDomain> implements CrudServi
     @Override
     public void save(T domain) {
         domain.save();
+    }
+
+    @Override
+    public void insertOrUpdate(T domain) {
+        if (Strings.isNullOrEmpty(domain.getId())) {
+            insert(domain);
+        } else {
+            Optional<T> optional = findById(domain.getId());
+            if (optional.isPresent()) {
+                update(domain);
+            } else {
+                insert(domain);
+            }
+        }
     }
 
     @Override

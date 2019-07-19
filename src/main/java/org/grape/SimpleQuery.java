@@ -5,6 +5,8 @@ import io.ebean.Expression;
 import io.ebean.ExpressionFactory;
 import io.ebean.Junction;
 import io.ebean.Query;
+import io.ebeaninternal.server.expression.Op;
+import io.ebeaninternal.server.expression.SimpleExpression;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
@@ -15,23 +17,24 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.util.List;
 
-@ApiModel("表格查询条件")
+@ApiModel("【通用】表格查询条件")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class SimpleQuery implements Serializable {
-    @ApiModelProperty("显示的列")
+    public static final SimpleExpression EXPRESSION_EMPTY = new SimpleExpression("1", Op.EQ, 1);
+    @ApiModelProperty(value = "显示的列", required = true, allowableValues = "参考具体领域模型")
     private List<String> columns;
-    @ApiModelProperty("全文搜索的列")
+    @ApiModelProperty(value = "全文搜索的列", allowableValues = "启用全文搜索时，模糊匹配的列")
     private List<String> searchColumns;
-    @ApiModelProperty("搜索文本")
+    @ApiModelProperty(value = "搜索文本", allowableValues = "启用全文搜索时，模糊匹配的文本")
     private String searchText;
     @ApiModelProperty("过滤条件")
-    private WhereCondition whereCondition;
+    private List<WhereCondition.ExpressCondition> whereCondition;
     @ApiModelProperty("排序字段")
     private List<OrderBy> orderByList;
-    @ApiModelProperty("页面大小")
+    @ApiModelProperty(value = "页面大小", allowableValues = "为空时，不分页")
     private int pageSize = Integer.MAX_VALUE;
 
     /**
@@ -63,17 +66,25 @@ public class SimpleQuery implements Serializable {
 
     public <T extends BaseDomain> Expression whereExpression(Query<T> query) {
         if (searchColumns != null && !searchColumns.isEmpty() && !Strings.isNullOrEmpty(searchText)) {
-            if (whereCondition != null) {
-                return query.getExpressionFactory().and(searchExpression(query), whereCondition.whereExpression(query));
+            if (whereCondition != null && !whereCondition.isEmpty()) {
+                return query.getExpressionFactory().and(searchExpression(query), internalWhereExpression(query));
             } else {
                 return searchExpression(query);
             }
         } else {
-            if (whereCondition != null) {
-                return whereCondition.whereExpression(query);
+            if (whereCondition != null && !whereCondition.isEmpty()) {
+                return internalWhereExpression(query);
             } else {
-                return null;
+                return EXPRESSION_EMPTY;
             }
+        }
+    }
+
+    private <T extends BaseDomain> Expression internalWhereExpression(Query<T> query) {
+        if (whereCondition.size() == 1) {
+            return whereCondition.get(0).whereExpression(query);
+        } else {
+            return new WhereCondition.AndCondition(whereCondition).whereExpression(query);
         }
     }
 

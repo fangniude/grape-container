@@ -51,15 +51,33 @@ public abstract class BaseDomain extends BaseModel {
      * 插入时间
      */
     @CreatedTimestamp
-    @ApiModelProperty("插入时间")
+    @ApiModelProperty(hidden = true)
     protected LocalDateTime whenCreated;
 
     /**
      * 最后更新时间
      */
     @UpdatedTimestamp
-    @ApiModelProperty("最后更新时间")
+    @ApiModelProperty(hidden = true)
     protected LocalDateTime whenUpdated;
+
+    public BaseDomain() {
+    }
+
+    public BaseDomain(String id) {
+        this.id = id;
+    }
+
+    public BaseDomain(String id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public BaseDomain(String id, String name, String remark) {
+        this.id = id;
+        this.name = name;
+        this.remark = remark;
+    }
 
     public static String id(String... strings) {
         return String.join("__", strings);
