@@ -37,7 +37,7 @@ public abstract class BaseDomain extends BaseModel {
     /**
      * 通用名称
      */
-    @Column(nullable = false)
+//    @Column(nullable = false)
     @ApiModelProperty("通用名称")
     protected String name;
 

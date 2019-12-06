@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import io.ebean.PagedList;
 import io.ebean.Query;
 import lombok.NonNull;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -20,6 +21,12 @@ public abstract class BaseCrudService<T extends BaseDomain> implements CrudServi
 
     @Override
     public void insert(T domain) {
+        /**
+         * 雪花算法主键生成
+         */
+        if(StringUtils.isEmpty(domain.getId())){
+            domain.setId(String.valueOf(SpringUtil.getBean(SnowflakeIdWorker.class).nextId()));
+        }
         domain.insert();
     }
 
@@ -38,12 +45,13 @@ public abstract class BaseCrudService<T extends BaseDomain> implements CrudServi
         if (Strings.isNullOrEmpty(domain.getId())) {
             insert(domain);
         } else {
-            Optional<T> optional = findById(domain.getId());
-            if (optional.isPresent()) {
-                update(domain);
-            } else {
-                insert(domain);
-            }
+//            已被其他用户删除的数据，前端传来更新操作,会重新插入，正常逻辑应该提示失败
+//            Optional<T> optional = this.findById(domain.getId());
+//            if (optional.isPresent()) {
+            this.update(domain);
+//            } else {
+//                this.insert(domain);
+//            }
         }
     }
 
