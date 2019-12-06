@@ -223,4 +223,9 @@
             <url>http://47.98.102.137:18081/repository/maven-snapshots</url>
         </snapshotRepository>
     </distributionManagement>
+    <scm>
+        <connection>scm:git:file://${localGitPath}</connection>
+        <developerConnection>scm:git:file://${localGitPath}</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
 </project>
