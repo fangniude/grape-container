@@ -36,6 +36,13 @@ public interface CrudService<T extends BaseDomain> {
     void insertOrUpdate(T domain);
 
     /**
+     * 根据id是否为null，判断是插入还是更新
+     *
+     * @param domain domain
+     */
+    void insertOrUpdateByIdIsNull(T domain);
+
+    /**
      * delete
      *
      * @param domain domain

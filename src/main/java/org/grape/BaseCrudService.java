@@ -24,7 +24,7 @@ public abstract class BaseCrudService<T extends BaseDomain> implements CrudServi
         /**
          * 雪花算法主键生成
          */
-        if(StringUtils.isEmpty(domain.getId())){
+        if (StringUtils.isEmpty(domain.getId())) {
             domain.setId(String.valueOf(SpringUtil.getBean(SnowflakeIdWorker.class).nextId()));
         }
         domain.insert();
@@ -45,13 +45,21 @@ public abstract class BaseCrudService<T extends BaseDomain> implements CrudServi
         if (Strings.isNullOrEmpty(domain.getId())) {
             insert(domain);
         } else {
-//            已被其他用户删除的数据，前端传来更新操作,会重新插入，正常逻辑应该提示失败
-//            Optional<T> optional = this.findById(domain.getId());
-//            if (optional.isPresent()) {
-            this.update(domain);
-//            } else {
-//                this.insert(domain);
-//            }
+            Optional<T> optional = this.findById(domain.getId());
+            if (optional.isPresent()) {
+                this.update(domain);
+            } else {
+                this.insert(domain);
+            }
+        }
+    }
+
+    @Override
+    public void insertOrUpdateByIdIsNull(T domain) {
+        if (Strings.isNullOrEmpty(domain.getId())) {
+            insert(domain);
+        } else {
+            update(domain);
         }
     }
 
