@@ -41,10 +41,10 @@ public class SimpleQuery implements Serializable {
      * start with 1
      */
     @ApiModelProperty("当前页码，从1开始，默认1")
-    private int pageIndex = 1;
+    private int pageNo = 1;
 
     public int offSet() {
-        return (pageIndex - 1) * pageSize;
+        return (pageNo - 1) * pageSize;
     }
 
     public <T extends BaseDomain> io.ebean.OrderBy<T> orderBy() {
