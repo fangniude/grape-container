@@ -10,7 +10,7 @@
 
     <groupId>org.grape</groupId>
     <artifactId>grape-container</artifactId>
-    <version>1.0.5-SNAPSHOT</version>
+    <version>1.0.4-SNAPSHOT</version>
 
     <properties>
         <java.version>1.8</java.version>
