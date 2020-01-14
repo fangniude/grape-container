@@ -210,6 +210,8 @@ public class GrapeApplication {
 
         hasEntityGrapes.stream()
                 .map(name -> {
+                    getPlugin(name).setDbName(serverMap.containsKey(name) ? name : DATA_SOURCE_DEFAULT);
+
                     ServerConfig sc = serverMap.get(getPlugin(name).getDbName());
 
                     if (sc != null) {
