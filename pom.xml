@@ -60,22 +60,22 @@
         <dependency>
             <groupId>io.ebean</groupId>
             <artifactId>ebean</artifactId>
-            <version>11.39.1</version>
+            <version>12.1.6</version>
         </dependency>
         <dependency>
             <groupId>io.ebean</groupId>
             <artifactId>ebean-agent</artifactId>
-            <version>11.39.1</version>
+            <version>12.1.6</version>
         </dependency>
         <dependency>
             <groupId>org.avaje</groupId>
             <artifactId>avaje-agentloader</artifactId>
-            <version>3.0.1</version>
+            <version>4.3</version>
         </dependency>
         <dependency>
             <groupId>io.ebean</groupId>
             <artifactId>ebean-migration</artifactId>
-            <version>11.16.1</version>
+            <version>12.1.1</version>
         </dependency>
 
         <!-- dubbo -->
@@ -224,6 +224,6 @@
     <scm>
         <connection>scm:git:file://${localGitPath}</connection>
         <developerConnection>scm:git:file://${localGitPath}</developerConnection>
-        <tag>grape-container-1.0.4</tag>
+        <tag>grape-container-1.0.2</tag>
     </scm>
 </project>
