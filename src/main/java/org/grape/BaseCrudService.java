@@ -24,8 +24,8 @@ public abstract class BaseCrudService<T extends BaseDomain> implements CrudServi
         /**
          * 雪花算法主键生成
          */
-        if (StringUtils.isEmpty(domain.getId())) {
-            domain.setId(String.valueOf(SpringUtil.getBean(SnowflakeIdWorker.class).nextId()));
+        if (domain.getId() == null) {
+            domain.setId(SpringUtil.getBean(SnowflakeIdWorker.class).nextId());
         }
         domain.insert();
     }
@@ -42,7 +42,7 @@ public abstract class BaseCrudService<T extends BaseDomain> implements CrudServi
 
     @Override
     public void insertOrUpdate(T domain) {
-        if (Strings.isNullOrEmpty(domain.getId())) {
+        if (domain.getId() == null) {
             insert(domain);
         } else {
             Optional<T> optional = this.findById(domain.getId());
@@ -56,7 +56,7 @@ public abstract class BaseCrudService<T extends BaseDomain> implements CrudServi
 
     @Override
     public void insertOrUpdateByIdIsNull(T domain) {
-        if (Strings.isNullOrEmpty(domain.getId())) {
+        if (domain.getId() == null) {
             insert(domain);
         } else {
             update(domain);
@@ -74,7 +74,7 @@ public abstract class BaseCrudService<T extends BaseDomain> implements CrudServi
     }
 
     @Override
-    public void deleteById(String id) {
+    public void deleteById(Long id) {
         finder.deleteById(id);
     }
 
@@ -84,19 +84,19 @@ public abstract class BaseCrudService<T extends BaseDomain> implements CrudServi
     }
 
     @Override
-    public Optional<T> findById(String id) {
+    public Optional<T> findById(Long id) {
         return Optional.ofNullable(findByIdNullable(id));
     }
 
     @Nullable
     @Override
-    public T findByIdNullable(String id) {
+    public T findByIdNullable(Long id) {
         return finder.byId(id);
     }
 
     @NonNull
     @Override
-    public T findByIdNonNull(String id) {
+    public T findByIdNonNull(Long id) {
         T t = finder.byId(id);
         if (t == null) {
             throw new GrapeException(String.format("can not found %s by id %s", domainClass.getName(), id));

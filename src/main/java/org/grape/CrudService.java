@@ -67,7 +67,7 @@ public interface CrudService<T extends BaseDomain> {
      *
      * @param id id
      */
-    void deleteById(String id);
+    void deleteById(Long id);
 
     /**
      * all
@@ -83,7 +83,7 @@ public interface CrudService<T extends BaseDomain> {
      * @param id id
      * @return optional
      */
-    Optional<T> findById(String id);
+    Optional<T> findById(Long id);
 
     /**
      * find by id
@@ -92,7 +92,7 @@ public interface CrudService<T extends BaseDomain> {
      * @return nullable
      */
     @Nullable
-    T findByIdNullable(String id);
+    T findByIdNullable(Long id);
 
     /**
      * find by id
@@ -101,7 +101,7 @@ public interface CrudService<T extends BaseDomain> {
      * @return throw RuntimeException if null
      */
     @NonNull
-    T findByIdNonNull(String id);
+    T findByIdNonNull(Long id);
 
     /**
      * query for tables

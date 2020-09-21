@@ -28,11 +28,11 @@ import java.time.LocalDateTime;
 public abstract class BaseDomain extends BaseModel {
 
     /**
-     * 用逻辑ID，组合主键用id静态方法拼接
+     * ID
      */
     @Id
-    @ApiModelProperty("逻辑ID")
-    protected String id;
+    @ApiModelProperty("ID")
+    protected Long id;
 
     /**
      * 通用名称
@@ -64,23 +64,19 @@ public abstract class BaseDomain extends BaseModel {
     public BaseDomain() {
     }
 
-    public BaseDomain(String id) {
+    public BaseDomain(Long id) {
         this.id = id;
     }
 
-    public BaseDomain(String id, String name) {
+    public BaseDomain(Long id, String name) {
         this.id = id;
         this.name = name;
     }
 
-    public BaseDomain(String id, String name, String remark) {
+    public BaseDomain(Long id, String name, String remark) {
         this.id = id;
         this.name = name;
         this.remark = remark;
-    }
-
-    public static String id(String... strings) {
-        return String.join("__", strings);
     }
 
     @Override
@@ -109,7 +105,7 @@ public abstract class BaseDomain extends BaseModel {
         super.insert();
     }
 
-    public static class Finder<T extends BaseDomain> extends io.ebean.Finder<String, T> {
+    public static class Finder<T extends BaseDomain> extends io.ebean.Finder<Long, T> {
         protected final Class<T> type;
 
         public Finder(Class<T> type) {
